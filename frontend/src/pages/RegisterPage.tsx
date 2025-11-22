@@ -32,7 +32,7 @@ const RegisterPage: React.FC = () => {
       } else {
         setError('Registration failed. Please try again.');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);

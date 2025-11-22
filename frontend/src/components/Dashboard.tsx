@@ -1,6 +1,7 @@
 import React from 'react';
-import { CvAnalysisResult } from '../types';
+import type { CvAnalysisResult } from '../types';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts';
+import { Link } from 'react-router-dom';
 
 interface DashboardProps {
   analysis: CvAnalysisResult;
@@ -32,7 +33,7 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, onStartInterview, onLog
               </svg>
               Vào "Safe Arena" (Phỏng vấn thử)
             </button>
-            
+            <button><Link to='/history'>History</Link></button>
             <button 
               onClick={onLogout}
               className="text-slate-400 hover:text-red-400 p-3 rounded-lg hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700"
@@ -42,6 +43,7 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, onStartInterview, onLog
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </button>
+            
           </div>
         </header>
 
@@ -73,7 +75,7 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, onStartInterview, onLog
               Điểm mạnh
             </h3>
             <ul className="space-y-4">
-              {analysis.strengths.map((item, idx) => (
+              {analysis.strengths.map((item: string, idx: number) => (
                 <li key={idx} className="flex items-start gap-3 text-slate-300">
                   <svg className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
@@ -91,7 +93,7 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, onStartInterview, onLog
               Điểm mù (Cần cải thiện)
             </h3>
              <ul className="space-y-4">
-              {analysis.weaknesses.map((item, idx) => (
+              {analysis.weaknesses.map((item: string, idx: number) => (
                 <li key={idx} className="flex items-start gap-3 text-slate-300">
                    <svg className="w-5 h-5 text-rose-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
@@ -107,7 +109,7 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, onStartInterview, onLog
         <div className="bg-slate-950 border border-slate-800 rounded-2xl p-8 shadow-lg">
           <h3 className="text-blue-400 uppercase text-sm font-semibold tracking-wider mb-8">Gợi ý nâng cấp CV (AI Rewrite)</h3>
           <div className="space-y-8">
-            {analysis.rewrittenPoints.map((point, idx) => (
+            {analysis.rewrittenPoints.map((point: { original: string; improved: string; reason: string }, idx: number) => (
               <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-900/50 rounded-xl border border-slate-800/50 hover:border-blue-500/30 transition-colors">
                 <div>
                   <div className="text-xs text-slate-500 mb-2 font-mono">BẢN GỐC</div>

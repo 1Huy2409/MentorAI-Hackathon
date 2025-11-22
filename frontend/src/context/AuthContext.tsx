@@ -14,6 +14,7 @@ export interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<boolean>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

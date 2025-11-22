@@ -6,17 +6,12 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({ onStart }) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center bg-slate-900 relative overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center bg-slate-900 relative overflow-hidden -mt-8">
       {/* Background Effects */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] -z-0 animate-pulse-slow" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] -z-0" />
 
       <div className="relative z-10 max-w-3xl space-y-8 animate-slide-up">
-        <div className="inline-flex items-center px-3 py-1 space-x-2 border border-blue-500/30 rounded-full bg-blue-500/10">
-          <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
-          <span className="text-xs font-medium text-blue-300 uppercase tracking-wider">AI Career Co-pilot</span>
-        </div>
-
         <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
           Mentor<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">AI</span>
         </h1>
