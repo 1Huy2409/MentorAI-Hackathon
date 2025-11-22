@@ -7,7 +7,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -22,13 +22,26 @@ if (!API_KEY || !API_SECRET || !LIVEKIT_URL) {
   console.error("Missing LiveKit environment variables!");
 }
 
+const mongoose = require('mongoose');
+const authRoutes = require('./routes/authRoutes');
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB Connected'))
+  .catch(err => console.log(err));
+
+// Routes
+app.use('/api/auth', authRoutes);
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.send('MentorAI Backend is running');
 });
 
+const authMiddleware = require('./middleware/authMiddleware');
+
 // Generate Token Endpoint
-app.post('/getToken', async (req, res) => {
+app.post('/getToken', authMiddleware, async (req, res) => {
   const { roomName, participantName } = req.body;
 
   if (!roomName || !participantName) {
