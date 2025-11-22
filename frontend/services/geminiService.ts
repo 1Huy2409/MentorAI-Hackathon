@@ -1,8 +1,9 @@
 
-import { GoogleGenAI, Type, LiveServerMessage, Modality, Part } from "@google/genai";
-import { CvAnalysisResult, InputData, QuickInterviewData, InterviewMode } from '../types';
+import { GoogleGenAI, Type, LiveServerMessage, Modality } from "@google/genai";
+import type { Part } from "@google/genai";
+import type { CvAnalysisResult, InputData, QuickInterviewData, InterviewMode } from '../src/types';
 
-const apiKey = process.env.API_KEY || '';
+const apiKey = import.meta.env.VITE_API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
 const MODEL_NAME = 'gemini-2.5-flash';
@@ -147,6 +148,7 @@ export class LiveInterviewManager {
     private outputNode: GainNode | null = null;
     private nextStartTime = 0;
     private stream: MediaStream | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private session: any = null; // Holds the active session
 
     public onAiSpeakingStateChange: ((isSpeaking: boolean) => void) | null = null;
@@ -160,7 +162,9 @@ export class LiveInterviewManager {
             quickData?: QuickInterviewData
         }
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
 
         this.outputNode = this.outputAudioContext.createGain();
@@ -236,6 +240,7 @@ export class LiveInterviewManager {
         this.session = await sessionPromise;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private setupAudioInput(sessionPromise: Promise<any>) {
         if (!this.inputAudioContext || !this.stream) return;
 
@@ -314,7 +319,8 @@ export class LiveInterviewManager {
 
     disconnect() {
         if (this.session) {
-            try { (this.session as any).close(); } catch (e) { /* ignore */ }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            try { (this.session as any).close(); } catch { /* ignore */ }
         }
 
         if (this.inputNode) {

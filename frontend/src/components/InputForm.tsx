@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { UserInput, InputData } from '../types';
+import type { UserInput, InputData } from '../types';
+import { Link } from 'react-router-dom';
 
 interface InputFormProps {
   onSubmit: (data: UserInput) => void;
@@ -163,7 +164,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, isSubmitting, onLogout 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200 p-4 md:p-8 flex flex-col items-center">
       <div className="w-full max-w-6xl flex justify-between items-center mb-4 animate-fade-in">
-          <div className="text-xl font-bold text-white">Mentor<span className="text-blue-500">AI</span></div>
+          <Link to='/' className="text-xl font-bold text-white">Mentor<span className="text-blue-500">AI</span></Link>
           <button 
             onClick={onLogout}
             className="text-slate-400 hover:text-white text-sm font-medium flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors"

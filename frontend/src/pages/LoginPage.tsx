@@ -19,11 +19,11 @@ const LoginPage: React.FC = () => {
     try {
       const success = await login(email, password);
       if (success) {
-        navigate('/');
+        navigate('/context');
       } else {
         setError('Invalid email or password. Try user@example.com / password123');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);

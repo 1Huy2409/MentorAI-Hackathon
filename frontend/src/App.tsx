@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import LandingPage from './pages/LandingPage';
@@ -8,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
+import HistoryPage from './pages/HistoryPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
@@ -26,13 +28,20 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<LandingPage />} />
+          <Route path='/' element={<LandingPage />} />
+
+          <Route path='/' element={<Layout />}>
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
-            
             {/* Protected Routes */}
-            <Route path="context" element={
+          </Route>
+          
+            <Route path="history" element={
+              <ProtectedRoute>
+                <HistoryPage />
+              </ProtectedRoute>
+            } />
+          <Route path="context" element={
               <ProtectedRoute>
                 <ContextFormPage />
               </ProtectedRoute>
@@ -42,12 +51,11 @@ function App() {
                 <InterviewPage />
               </ProtectedRoute>
             } />
-            <Route path="review" element={
+          <Route path="review" element={
               <ProtectedRoute>
                 <ReviewPage />
               </ProtectedRoute>
             } />
-          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
