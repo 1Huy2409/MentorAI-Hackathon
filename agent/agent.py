@@ -1,29 +1,37 @@
+import os
+from livekit.agents import Agent, AgentSession, JobContext, cli, WorkerOptions
+from livekit.plugins import dify, deepgram
 from dotenv import load_dotenv
-from livekit import agents
-from livekit.agents import AgentSession, Agent
-from livekit.plugins import google
 
 load_dotenv()
 
-async def entrypoint(ctx: agents.JobContext):
+async def entry_point(ctx: JobContext):
     await ctx.connect()
+    
+    agent = Agent(
+        instructions="You are MentorAI - a professional and friendly interviewer. Ask thoughtful questions about the candidate's experience and skills."
+    )
 
+    # Dify LLM configuration - Load from environment variables
+    llm = dify.LLM(
+        user=os.getenv("DIFY_USER_ID", "default-user"),
+        api_key=os.getenv("DIFY_API_KEY"),
+        api_base=os.getenv("DIFY_BASE_URL", "https://api.dify.ai/v1")
+    )
+
+    # Deepgram STT/TTS configuration - Load from environment variables
     session = AgentSession(
-        llm=google.beta.realtime.RealtimeModel(
-            model="gemini-2.0-flash-exp",  # Correct model name
-            voice="Puck"
+        stt=deepgram.STT(
+            model="nova-2-general",
+            language="en-US"
+        ),
+        llm=llm,
+        tts=deepgram.TTS(
+            model="aura-asteria-en"
         )
     )
 
-    await session.start(
-        room=ctx.room,
-        agent=Agent(instructions="Bạn là người phỏng vấn người Anh. Hãy nói tiếng Anh. Chào ứng viên ngắn gọn và hỏi về kinh nghiệm. Trả lời dưới 2 câu.")
-    )
-
-    await session.generate_reply(
-        instructions="Chào ứng viên bằng tiếng Anh và giới thiệu bản thân ngắn gọn."
-    )
-
+    await session.start(agent=agent, room=ctx.room)
 
 if __name__ == "__main__":
-    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))
+    cli.run_app(WorkerOptions(entrypoint_fnc=entry_point))

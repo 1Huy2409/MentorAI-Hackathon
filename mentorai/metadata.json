@@ -1,0 +1,7 @@
+{
+  "name": "MentorAI",
+  "description": "A career co-pilot helping Vietnamese students and freshers bridge the skill gap with AI-powered CV analysis and mock interviews.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
