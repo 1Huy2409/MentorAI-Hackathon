@@ -22,7 +22,7 @@ const Layout: React.FC = () => {
               <Link to="/" className="flex items-center gap-1 text-slate-600 hover:text-blue-600 font-medium transition-colors">
                 <Home className="h-4 w-4" /> Home
               </Link>
-              
+
               {user ? (
                 <>
                   <Link to="/context" className="flex items-center gap-1 text-slate-600 hover:text-blue-600 font-medium transition-colors">
@@ -33,9 +33,9 @@ const Layout: React.FC = () => {
                       <div className="bg-blue-100 p-1 rounded-full">
                         <User className="h-4 w-4 text-blue-600" />
                       </div>
-                      {user.name}
+                      {user.username}
                     </span>
-                    <button 
+                    <button
                       onClick={logout}
                       className="flex items-center gap-1 text-slate-500 hover:text-red-600 font-medium transition-colors text-sm"
                     >

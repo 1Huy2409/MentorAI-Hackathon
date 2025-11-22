@@ -1,55 +1,78 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import api from '../utils/api';
 
 interface User {
-  email: string;
-  name: string;
+  id: string;
+  username: string;
 }
 
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (email: string, password: string, name: string) => Promise<boolean>;
+  register: (username: string, password: string) => Promise<boolean>;
+  token: string | null;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Mock login logic
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (email === 'user@example.com' && password === 'password123') {
-          setUser({ email, name: 'Demo User' });
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      }, 800); // Simulate network delay
-    });
+  useEffect(() => {
+    if (token) {
+      // Optional: Validate token or fetch user profile
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    }
+  }, [token]);
+
+  const login = async (username: string, password: string): Promise<boolean> => {
+    try {
+      const response = await api.post('/auth/login', { username, password });
+      const { token, user } = response.data;
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      setToken(token);
+      setUser(user);
+      return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
+    }
   };
 
-  const register = async (email: string, password: string, name: string): Promise<boolean> => {
-    // Mock register logic
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Accept any registration for demo
-        console.log('Registered:', { email, password, name });
-        resolve(true);
-      }, 800);
-    });
+  const register = async (username: string, password: string): Promise<boolean> => {
+    try {
+      const response = await api.post('/auth/register', { username, password });
+      const { token, user } = response.data;
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      setToken(token);
+      setUser(user);
+      return true;
+    } catch (error) {
+      console.error('Registration failed:', error);
+      return false;
+    }
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, register }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, register, token }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Lock, Mail, ArrowRight } from 'lucide-react';
+import { Lock, User, ArrowRight } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,11 +17,11 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
+      const success = await login(username, password);
       if (success) {
         navigate('/');
       } else {
-        setError('Invalid email or password. Try user@example.com / password123');
+        setError('Invalid username or password.');
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
@@ -46,18 +46,18 @@ const LoginPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
+            <label className="block text-xs font-medium text-slate-700 mb-1">Username</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-4 w-4 text-slate-400" />
+                <User className="h-4 w-4 text-slate-400" />
               </div>
               <input
-                type="email"
+                type="text"
                 required
                 className="block w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-sm"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
               />
             </div>
           </div>
@@ -96,10 +96,10 @@ const LoginPage: React.FC = () => {
             </Link>
           </p>
         </div>
-        
+
         <div className="mt-6 pt-4 border-t border-slate-100 text-center text-[10px] text-slate-400">
           <p>Demo Credentials:</p>
-          <p>Email: user@example.com</p>
+          <p>Username: testuser</p>
           <p>Password: password123</p>
         </div>
       </div>
