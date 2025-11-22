@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Type, LiveServerMessage, Modality } from "@google/genai";
 import type { Part } from "@google/genai";
-import type { CvAnalysisResult, InputData, QuickInterviewData, InterviewMode } from '../src/types';
+import type { CvAnalysisResult, InputData, QuickInterviewData, InterviewMode, InterviewReview } from '../src/types';
 
 const apiKey = import.meta.env.VITE_API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
@@ -150,8 +150,12 @@ export class LiveInterviewManager {
     private stream: MediaStream | null = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private session: any = null; // Holds the active session
+    private conversationHistory: { role: 'user' | 'ai', text: string }[] = [];
+    private mode: InterviewMode | null = null;
+    private interviewData: { cv?: InputData, jd?: InputData, weaknesses?: string[], quickData?: QuickInterviewData } = {};
 
     public onAiSpeakingStateChange: ((isSpeaking: boolean) => void) | null = null;
+    public onEndInterview: (() => void) | null = null;
 
     async connect(
         mode: InterviewMode,
@@ -162,6 +166,10 @@ export class LiveInterviewManager {
             quickData?: QuickInterviewData
         }
     ) {
+        this.mode = mode;
+        this.interviewData = data;
+        this.conversationHistory = [];
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -194,6 +202,7 @@ export class LiveInterviewManager {
         1. Đặt câu hỏi phỏng vấn chuyên sâu, tập trung khai thác điểm yếu hoặc kinh nghiệm trong CV.
         2. Lắng nghe và phản hồi tự nhiên.
         3. Bắt đầu bằng việc chào ứng viên và đặt câu hỏi đầu tiên liên quan đến CV.
+        4. Nếu ứng viên nói "dừng lại", "kết thúc", "tạm dừng", "stop", "end interview" hoặc các lệnh tương tự, hãy trả lời: "COMMAND:END_INTERVIEW" và chào tạm biệt.
       `;
         } else if (mode === 'QUICK' && data.quickData) {
             systemInstruction = `
@@ -201,9 +210,10 @@ export class LiveInterviewManager {
         Mức độ kinh nghiệm của ứng viên: ${data.quickData.experience}.
 
         Nhiệm vụ:
-        1. Đóng vai người phỏng vấn nghiêm túc nhưng cởi mở.
+        1. Đóng vai người phỏng vấn nghiêm túc nhưng cở mở.
         2. Đặt các câu hỏi phù hợp với vị trí ${data.quickData.role} và tầm kinh nghiệm ${data.quickData.experience}.
         3. Bắt đầu bằng câu: "Chào bạn, tôi là người phỏng vấn hôm nay. Bạn hãy giới thiệu đôi chút về bản thân mình?"
+        4. Nếu ứng viên nói "dừng lại", "kết thúc", "tạm dừng", "stop", "end interview" hoặc các lệnh tương tự, hãy trầ lời: "COMMAND:END_INTERVIEW" và chào tạm biệt.
       `;
         }
 
@@ -276,6 +286,7 @@ export class LiveInterviewManager {
     }
 
     private async handleMessage(message: LiveServerMessage) {
+        // Check for audio data (AI speaking)
         const audioData = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
 
         if (audioData) {
@@ -315,6 +326,119 @@ export class LiveInterviewManager {
             channelData[i] = dataInt16[i] / 32768.0;
         }
         return buffer;
+    }
+
+    async generateReview(): Promise<InterviewReview> {
+        console.log('Generating review...');
+        console.log('Conversation history length:', this.conversationHistory.length);
+        console.log('Conversation history:', this.conversationHistory);
+
+        if (!this.mode) {
+            throw new Error("No interview mode set");
+        }
+
+        if (this.conversationHistory.length === 0) {
+            console.warn("No conversation history found, creating default review");
+            return {
+                overallScore: 50,
+                technicalScore: 50,
+                communicationScore: 50,
+                confidenceScore: 50,
+                strengths: ["Đã tham gia buổi phỏng vấn"],
+                improvements: ["Cần có thêm dữ liệu để đánh giá chính xác hơn"],
+                detailedFeedback: "Buổi phỏng vấn chưa có đủ dữ liệu để đánh giá chi tiết. Vui lòng thử lại với cuộc phỏng vấn dài hơn.",
+                keyQuestions: []
+            };
+        }
+
+        const conversationText = this.conversationHistory
+            .map(item => `${item.role === 'ai' ? 'Interviewer' : 'Candidate'}: ${item.text}`)
+            .join('\n\n');
+
+        console.log('Conversation text for review:', conversationText);
+
+        const reviewPrompt = `
+Bạn là một chuyên gia đánh giá phỏng vấn. Dựa trên cuộc phỏng vấn sau, hãy đưa ra đánh giá chi tiết và CÔNG BẰNG.
+
+${this.mode === 'QUICK' && this.interviewData.quickData ? `
+Vị trí ứng tuyển: ${this.interviewData.quickData.role}
+Kinh nghiệm: ${this.interviewData.quickData.experience}
+` : ''}
+
+${this.mode === 'ANALYSIS' && this.interviewData.weaknesses ? `
+Điểm yếu cần kiểm tra: ${this.interviewData.weaknesses.join(', ')}
+` : ''}
+
+CUỘC PHỎNG VẤN:
+${conversationText}
+
+Hãy đánh giá ứng viên theo các tiêu chí sau (điểm số phải phản ánh đúng chất lượng câu trả lời):
+1. Điểm tổng thể (0-100): Đánh giá tổng quan dựa trên tất cả các yếu tố
+2. Kỹ năng chuyên môn (0-100): Kiến thức về lĩnh vực, kinh nghiệm thực tế
+3. Kỹ năng giao tiếp (0-100): Rõ ràng, mạch lạc, diễn đạt tốt
+4. Sự tự tin (0-100): Trả lời không do dự, tự tin nhưng không kiêu ngạo
+5. Liệt kê 3-5 điểm mạnh CỤ THỂ từ các câu trả lời
+6. Liệt kê 3-5 điểm cần cải thiện CỤ THỂ
+7. Nhận xét chi tiết về toàn bộ buổi phỏng vấn (tối thiểu 100 từ)
+8. Đánh giá 2-3 câu hỏi quan trọng nhất, câu trả lời của ứng viên, và nhận xét cụ thể
+
+LƯU Ý: 
+- Nếu ứng viên trả lời tốt, đừng ngại cho điểm cao (70-90)
+- Nếu ứng viên trả lời trung bình, cho điểm 50-70
+- Chỉ cho điểm thấp (dưới 50) nếu thực sự câu trả lời kém
+- Phải công bằng và có căn cứ rõ ràng
+
+Trả về kết quả dưới dạng JSON theo schema đã định nghĩa.
+        `;
+
+        try {
+            const response = await ai.models.generateContent({
+                model: MODEL_NAME,
+                contents: { role: 'user', parts: [{ text: reviewPrompt }] },
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            overallScore: { type: Type.INTEGER },
+                            technicalScore: { type: Type.INTEGER },
+                            communicationScore: { type: Type.INTEGER },
+                            confidenceScore: { type: Type.INTEGER },
+                            strengths: {
+                                type: Type.ARRAY,
+                                items: { type: Type.STRING }
+                            },
+                            improvements: {
+                                type: Type.ARRAY,
+                                items: { type: Type.STRING }
+                            },
+                            detailedFeedback: { type: Type.STRING },
+                            keyQuestions: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        question: { type: Type.STRING },
+                                        answer: { type: Type.STRING },
+                                        evaluation: { type: Type.STRING }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (response.text) {
+                const review = JSON.parse(response.text) as InterviewReview;
+                console.log('Generated review:', review);
+                return review;
+            }
+            throw new Error("No review generated");
+        } catch (error) {
+            console.error("Error generating review:", error);
+            throw error;
+        }
     }
 
     disconnect() {

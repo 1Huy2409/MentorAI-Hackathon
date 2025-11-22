@@ -1,7 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import Dashboard from '../components/Dashboard';
+import InterviewReviewCard from '../components/InterviewReviewCard';
 import { useAuth } from '../hooks/useAuth';
-import type { CvAnalysisResult } from '../types';
+import type { CvAnalysisResult, InterviewReview } from '../types';
 
 const ReviewPage = () => {
   const navigate = useNavigate();
@@ -9,6 +10,17 @@ const ReviewPage = () => {
   const { logout } = useAuth();
   
   const analysis = location.state?.analysis as CvAnalysisResult;
+  const interviewReview = location.state?.interviewReview as InterviewReview;
+
+  // If we have interview review, show that instead
+  if (interviewReview) {
+    return (
+      <InterviewReviewCard 
+        review={interviewReview}
+        onBackToMenu={() => navigate('/menu')}
+      />
+    );
+  }
 
   if (!analysis) {
     return (

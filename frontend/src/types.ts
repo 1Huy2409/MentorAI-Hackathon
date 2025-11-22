@@ -26,4 +26,19 @@ export interface QuickInterviewData {
   experience: string;
 }
 
+export interface InterviewReview {
+  overallScore: number;
+  technicalScore: number;
+  communicationScore: number;
+  confidenceScore: number;
+  strengths: string[];
+  improvements: string[];
+  detailedFeedback: string;
+  keyQuestions: {
+    question: string;
+    answer: string;
+    evaluation: string;
+  }[];
+}
+
 export type InterviewMode = 'ANALYSIS' | 'QUICK';

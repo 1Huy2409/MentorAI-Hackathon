@@ -1,12 +1,13 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import Layout from './components/Layout';
 import LandingPage from './pages/LandingPage';
 import ContextFormPage from './pages/ContextFormPage';
 import InterviewPage from './pages/InterviewPage';
 import ReviewPage from './pages/ReviewPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import MainMenuPage from './pages/MainMenuPage';
+import QuickInterviewSetupPage from './pages/QuickInterviewSetupPage';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import HistoryPage from './pages/HistoryPage';
@@ -29,18 +30,24 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path='/' element={<LandingPage />} />
-
-          <Route path='/' element={<Layout />}>
-            <Route path="login" element={<LoginPage />} />
-            <Route path="register" element={<RegisterPage />} />
-            {/* Protected Routes */}
-          </Route>
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<RegisterPage />} />
           
-            <Route path="history" element={
-              <ProtectedRoute>
-                <HistoryPage />
-              </ProtectedRoute>
-            } />
+          <Route path="menu" element={
+            <ProtectedRoute>
+              <MainMenuPage />
+            </ProtectedRoute>
+          } />
+          <Route path="quick-interview-setup" element={
+            <ProtectedRoute>
+              <QuickInterviewSetupPage />
+            </ProtectedRoute>
+          } />
+          <Route path="history" element={
+            <ProtectedRoute>
+              <HistoryPage />
+            </ProtectedRoute>
+          } />
           <Route path="context" element={
               <ProtectedRoute>
                 <ContextFormPage />

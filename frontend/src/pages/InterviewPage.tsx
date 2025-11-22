@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Mic, MicOff, PhoneOff } from 'lucide-react';
 import { LiveInterviewManager } from '../../services/geminiService';
-import type { CvAnalysisResult, QuickInterviewData } from '../types';
+import type { CvAnalysisResult, QuickInterviewData, InterviewReview } from '../types';
 
 const InterviewPage: React.FC = () => {
   const navigate = useNavigate();
@@ -10,7 +10,11 @@ const InterviewPage: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
+  const [isGeneratingReview, setIsGeneratingReview] = useState(false);
   const managerRef = useRef<LiveInterviewManager | null>(null);
+  
+  // Generate random heights once for audio bars
+  const [barHeights] = useState(() => [...Array(5)].map(() => 20 + Math.random() * 40));
 
   // Get data from location state
   const analysis = location.state?.analysis as CvAnalysisResult;
@@ -36,6 +40,11 @@ const InterviewPage: React.FC = () => {
         setIsAiSpeaking(speaking);
       };
 
+      // Set up end interview callback
+      manager.onEndInterview = () => {
+        handleEndInterview();
+      };
+
       // Connect based on mode
       if (mode === 'QUICK' && quickData) {
         await manager.connect('QUICK', { quickData });
@@ -52,17 +61,48 @@ const InterviewPage: React.FC = () => {
     }
   };
 
-  const handleEndInterview = () => {
-    if (managerRef.current) {
+  const handleEndInterview = async () => {
+    if (!managerRef.current) return;
+
+    setIsGeneratingReview(true);
+    
+    try {
+      // Generate review before disconnecting
+      const review: InterviewReview = await managerRef.current.generateReview();
+      
+      // Disconnect manager
       managerRef.current.disconnect();
       managerRef.current = null;
-    }
-    setIsConnected(false);
-    // Navigate back to review page with the analysis data
-    if (analysis) {
-      navigate('/review', { state: { analysis } });
-    } else {
-      navigate('/context');
+      
+      setIsConnected(false);
+      setIsGeneratingReview(false);
+      
+      // Navigate to review page with both analysis and interview review
+      navigate('/review', { 
+        state: { 
+          analysis,
+          interviewReview: review,
+          mode
+        } 
+      });
+    } catch (error) {
+      console.error('Error generating review:', error);
+      
+      // Still disconnect and navigate even if review fails
+      if (managerRef.current) {
+        managerRef.current.disconnect();
+        managerRef.current = null;
+      }
+      
+      setIsConnected(false);
+      setIsGeneratingReview(false);
+      
+      // Navigate back without review
+      if (analysis) {
+        navigate('/review', { state: { analysis } });
+      } else {
+        navigate('/menu');
+      }
     }
   };
 
@@ -95,6 +135,9 @@ const InterviewPage: React.FC = () => {
           <p className="mt-6 text-sm text-slate-500">
             Đảm bảo microphone của bạn đã được kích hoạt
           </p>
+          <p className="mt-2 text-xs text-slate-600">
+            💡 Bạn có thể nói "dừng lại" hoặc "kết thúc" để kết thúc phỏng vấn
+          </p>
         </div>
       </div>
     );
@@ -102,6 +145,17 @@ const InterviewPage: React.FC = () => {
 
   return (
     <div className="h-[calc(100vh-140px)] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl relative flex flex-col">
+      {/* Generating Review Overlay */}
+      {isGeneratingReview && (
+        <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white text-lg font-semibold">Đang tạo đánh giá...</p>
+            <p className="text-slate-400 text-sm mt-2">Vui lòng đợi trong giây lát</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-slate-950/50 border-b border-slate-800 px-6 py-4">
         <h3 className="text-white font-semibold">Mock Interview Session</h3>
@@ -136,7 +190,7 @@ const InterviewPage: React.FC = () => {
                   isAiSpeaking ? 'animate-pulse' : ''
                 }`}
                 style={{
-                  height: isAiSpeaking ? `${20 + Math.random() * 40}px` : '20px',
+                  height: isAiSpeaking ? `${barHeights[i]}px` : '20px',
                   animationDelay: `${i * 0.1}s`
                 }}
               />
