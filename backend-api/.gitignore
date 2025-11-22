@@ -9,7 +9,7 @@ env/
 # Environment variables
 .env
 .env.local
-
+docker-compose.yml
 # OS files
 .DS_Store
 Thumbs.db
