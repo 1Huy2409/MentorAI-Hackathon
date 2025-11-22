@@ -279,14 +279,56 @@ export class LiveInterviewManager {
     }
 
     private async handleMessage(message: LiveServerMessage) {
+        // ============================
+        // 1. HANDLE USER SPEECH (STT)
+        // ============================
+        const userText = message?.serverContent?.inputTranscription?.text;
+        if (userText) {
+            console.log("USER TEXT:", userText);
+            this.conversationHistory.push({ role: "user", text: userText });
+        }
+
+        // ============================
+        // 2. HANDLE AI TEXT RESPONSE
+        // ============================
+        const aiText = message?.serverContent?.modelTurn?.parts?.[0]?.text;
+        if (aiText) {
+            console.log("AI TEXT:", aiText);
+            this.conversationHistory.push({ role: "ai", text: aiText });
+
+            // Detect when candidate says "kết thúc phỏng vấn"
+            if (aiText.includes("COMMAND:END_INTERVIEW")) {
+                console.log("Interview ending command received.");
+
+                // Gọi callback FE
+                if (this.onEndInterview) {
+                    this.onEndInterview();
+                }
+
+                // Cho AI nói câu tạm biệt trước khi tắt
+                setTimeout(() => {
+                    this.disconnect();
+                }, 800);
+
+                return; // stop processing audio for this turn
+            }
+        }
+
+        // ============================
+        // 3. HANDLE AI AUDIO RESPONSE
+        // ============================
         const audioData = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
 
         if (audioData) {
-            if (this.onAiSpeakingStateChange) this.onAiSpeakingStateChange(true);
+            if (this.onAiSpeakingStateChange) {
+                this.onAiSpeakingStateChange(true);
+            }
 
             if (this.outputAudioContext && this.outputNode) {
-                // Sync timing
-                this.nextStartTime = Math.max(this.outputAudioContext.currentTime, this.nextStartTime);
+                this.nextStartTime = Math.max(
+                    this.outputAudioContext.currentTime,
+                    this.nextStartTime
+                );
 
                 const audioBytes = base64ToUint8Array(audioData);
                 const audioBuffer = await this.decodeAudioData(audioBytes, this.outputAudioContext);
@@ -298,9 +340,12 @@ export class LiveInterviewManager {
                 source.start(this.nextStartTime);
                 this.nextStartTime += audioBuffer.duration;
 
-                // Simple heuristic to turn off visualizer shortly after buffer duration
                 setTimeout(() => {
-                    if (this.onAiSpeakingStateChange && this.outputAudioContext?.currentTime && this.outputAudioContext.currentTime >= this.nextStartTime - 0.1) {
+                    if (
+                        this.onAiSpeakingStateChange &&
+                        this.outputAudioContext?.currentTime &&
+                        this.outputAudioContext.currentTime >= this.nextStartTime - 0.1
+                    ) {
                         this.onAiSpeakingStateChange(false);
                     }
                 }, audioBuffer.duration * 1000);
